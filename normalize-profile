@@ -75,6 +75,10 @@ try:
         for cert in certs:
             cert_shas.append(hashlib.sha256(cert).hexdigest())
         plist["DeveloperCertificates"] = sorted(cert_shas)
+    if args.shorten_certs and "DER-Encoded-Profile" in plist:
+        cert = plist.pop("DER-Encoded-Profile")
+        cert = hashlib.sha256(cert).hexdigest()
+        plist["DER-Encoded-Profile"] = cert
 
     plistlib.dump(plist, sys.stdout.buffer, sort_keys=True)
 except subprocess.CalledProcessError:
