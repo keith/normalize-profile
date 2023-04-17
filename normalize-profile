@@ -80,6 +80,8 @@ try:
         cert = plist.pop("DER-Encoded-Profile")
         cert = hashlib.sha256(cert).hexdigest()
         plist["DER-Encoded-Profile"] = cert
+    if "ProvisionedDevices" in plist:
+        plist["ProvisionedDevices"] = sorted(plist["ProvisionedDevices"])
 
     plistlib.dump(plist, sys.stdout.buffer, sort_keys=True)
 except subprocess.CalledProcessError:
