@@ -46,6 +46,15 @@ Shorten certificate data to reduce diff size (useful for large diffs):
 normalize-profile --shorten-certs foo.mobileprovision
 ```
 
+Describe each developer certificate with its common name, expiration
+date, and SHA-256, useful when reviewing certificate renewals. This
+takes precedence over `--shorten-certs` for developer certificates, so
+combine them to also shorten `DER-Encoded-Profile`:
+
+```bash
+normalize-profile --shorten-certs --describe-certs foo.mobileprovision
+```
+
 Ignore profiles that are invalid for some reason:
 
 ```bash
