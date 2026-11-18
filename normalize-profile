@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import datetime
 import hashlib
 import os
 import plistlib
@@ -14,6 +15,40 @@ _NOISY_FIELDS = [
     "TimeToLive",
     "UUID",
 ]
+
+
+def _describe_cert(cert):
+    output = subprocess.run(
+        [
+            "openssl",
+            "x509",
+            "-inform",
+            "der",
+            "-noout",
+            "-subject",
+            "-enddate",
+            "-nameopt",
+            "multiline,utf8,-esc_msb",
+        ],
+        input=cert,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        check=True,
+    ).stdout.decode()
+
+    common_name = "unknown"
+    expiration = "unknown"
+    for line in output.splitlines():
+        key, _, value = line.strip().partition("=")
+        if key.strip() == "commonName":
+            common_name = value.strip()
+        elif key == "notAfter":
+            date = datetime.datetime.strptime(value, "%b %d %H:%M:%S %Y %Z")
+            expiration = date.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    sha = hashlib.sha256(cert).hexdigest()
+    return f"{common_name}, expires {expiration}, sha256 {sha}"
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("profile", help="The provisioning file to process")
@@ -37,7 +72,7 @@ parser.add_argument(
 parser.add_argument(
     "--shorten-certs",
     action="store_true",
-    help="Shorten the developer certificate data for easier diffing, these values won't have any relation to the certificate, but will be reproducible",
+    help="Replace each developer certificate with its common name, expiration date, and SHA-256, and replace DER-Encoded-Profile with its SHA-256",
     default=False,
 )
 args = parser.parse_args()
@@ -71,11 +106,11 @@ try:
             del plist[field]
 
     if args.shorten_certs and "DeveloperCertificates" in plist:
-        cert_shas = []
+        cert_descriptions = []
         certs = plist.pop("DeveloperCertificates")
         for cert in certs:
-            cert_shas.append(hashlib.sha256(cert).hexdigest())
-        plist["DeveloperCertificates"] = sorted(cert_shas)
+            cert_descriptions.append(_describe_cert(cert))
+        plist["DeveloperCertificates"] = sorted(cert_descriptions)
     if args.shorten_certs and "DER-Encoded-Profile" in plist:
         cert = plist.pop("DER-Encoded-Profile")
         cert = hashlib.sha256(cert).hexdigest()

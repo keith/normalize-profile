@@ -40,7 +40,10 @@ you might still need to check in the updated profile):
 normalize-profile --ignore-noisy-fields foo.mobileprovision
 ```
 
-Shorten certificate data to reduce diff size (useful for large diffs):
+Replace certificate data with something readable (useful for large
+diffs and reviewing certificate renewals). Each developer certificate
+becomes its common name, expiration date, and SHA-256, and
+`DER-Encoded-Profile` becomes its SHA-256:
 
 ```bash
 normalize-profile --shorten-certs foo.mobileprovision
